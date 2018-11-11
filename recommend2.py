@@ -33,7 +33,7 @@ class UserBasedCF():
         trainSet_len = 0
         testSet_len = 0
         for line in self.load_file(filename):
-            user, movie, rating, timestamp = line.split('::')
+            user, movie, rating, timestamp = line.split(',')
             if random.random() < pivot:
                 self.trainSet.setdefault(user, {})
                 self.trainSet[user][movie] = rating
@@ -138,7 +138,7 @@ class UserBasedCF():
 
 
 if __name__ == '__main__':
-    rating_file = '/home/ssw/coding/Python_project/recommendation/ml-100k'
+    rating_file = '/home/ssw/coding/Python_project/recommendation/ml-latest-small/ratings.csv'
     userCF = UserBasedCF()
     userCF.get_dataset(rating_file)
     userCF.calc_user_sim()
