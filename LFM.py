@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import math
+import numpy as np
 import random
 from operator import itemgetter
 
 REC_NUMBER = 10
-similarity_user = 20
+F = 10 #latent factor numbers
+ALPHA = 0.02
 
 
 def SplitData(filename, M, seed):           #读取数据，分割为训练集和测试集：M表示 1/M 的样本为测试集
@@ -17,7 +19,7 @@ def SplitData(filename, M, seed):           #读取数据，分割为训练集�
                 continue
             user, movie, rating, timestamp = line.split(',')
             user = int(user)
-            if float(rating) < 0:                   #此处int(rating)会报错；4分以下的评分忽略
+            if float(rating) < 4:                   #此处int(rating)会报错；4分以下的评分忽略
                 continue
             if random.randint(1,M) == 1:
                 if user not in test:
@@ -30,65 +32,62 @@ def SplitData(filename, M, seed):           #读取数据，分割为训练集�
     return test, train
 
 
+def InitLFM(train):
+    p = dict()
+    q = dict()
+    for u in train.keys():
+        if u not in p:
+            p[u] = np.random.rand(F) / math.sqrt(F)
+        for i in train[u]:
+            if i not in q:
+                q[i] = np.random.rand(F) / math.sqrt(F)
+    return (p, q)
 
-def UserSimilarity(train):
-    #build inverse table for item_users: it's shown that each item was selected by which users
-    item_users = {}
-    for u, items in train.items():
-        for i in items:
-            if i not in item_users:
-                item_users[i] = []
-            item_users[i].append(u)
+def LearningLFM(train, n, lam):
+    (p,q) = InitLFM(train)
+    alpha = ALPHA
+    for step in range(0, n):
+        total_error = 0.0
+        for u in train:
+            for i in q:
+                if i in train[u]:
+                    rui = 1
+                    pui = np.dot(p[u], q[i])
+                    eui = rui - pui
+                    total_error += np.abs(eui)
+                    p[u] += alpha * (q[i] * eui - lam * p[u])
+                    q[i] += alpha * (p[u] * eui - lam * q[i])
+        print(step, ':',total_error)
+        alpha *= 0.9
+    return p, q
 
-    user_sim_matrix = {}
-    for i, users in item_users.items():
-        for u in users:
-            for v in users:
-                if u == v:
-                    continue
-                user_sim_matrix.setdefault(u, {})
-                user_sim_matrix[u].setdefault(v, 0)
-                user_sim_matrix[u][v] += 1
-
-    #calculate finial similarity matrix W
-    for u, related_users in user_sim_matrix.items():
-        for v, cuv in related_users.items():
-            user_sim_matrix[u][v] = cuv / math.sqrt(len(train[u]) * len(train[v]))
-    return user_sim_matrix
-
-def Recommend(user, train, W):
-    rank = dict()
+def Recommend(p, q, user, train):
     n = REC_NUMBER
-    k = similarity_user
-    watched_items = train[user]
-    for v, wuv in sorted(W[user].items(),key=itemgetter(1), reverse=True)[:k]:      #obtained most k user which similarity given user
-        for movie in train[v]:
-            if movie in watched_items:
-                continue
-            rank.setdefault(movie, 0)
-            rank[movie] += wuv
-    #return most n movies which have large probability given user will like these. Return type: [{movieID: similarity score}, {},...,{}]
+    rank = {}
+    for i in q:
+        if i in train[user]:
+            continue
+        rank.setdefault(i, [])
+        rank[i].append(np.dot(p[user], q[i]))
     return sorted(rank.items(), key=itemgetter(1), reverse=True)[:n]
 
-
 class Evaluation():
-    
-    def __init__(self, train, test, W):
+
+    def __init__(self, train, test, p, q):
         self.train = train
         self.test = test
-        self.W = W
+        self.p = p
+        self.q = q
         self.N = REC_NUMBER
         self.hit = 0
         self.all = 0
         self.recommend_items = set()
-        self.all_items = set()
 
     def run(self):
         for user in self.train.keys():
-            for item in self.train[user]:
-                self.all_items.add(item)
             tu = self.test.get(user, {})  # user corresponding movie list in the test.
-            rank = Recommend(user, self.train, self.W)
+            rank = Recommend(self.p, self.q, user, self.train)
+
             for item, _ in rank:
                 if item in tu:
                     self.hit += 1
@@ -102,16 +101,21 @@ class Evaluation():
         return self.hit / (len(self.train) * self.N * 1.0)
 
     def Coverage(self):
-        return len(self.recommend_items) / (len(self.all_items) * 1.0)
-
+        return len(self.recommend_items) / (len(self.q) * 1.0)
 
 
 if __name__ == '__main__':
     filename = '/home/ssw/coding/Python_project/recommendation/ml-latest-small/ratings.csv'
-    test, train = SplitData(filename, 5, 10000)
-    W = UserSimilarity(train)
-    result = Evaluation(train, test, W)
+    test, train = SplitData(filename, 5, 10)
+    (p, q) = LearningLFM(train, 100, 0.01)        #input: train, epcho, lambda
+    result = Evaluation(train, test, p, q)
     result.run()
     print('precision: ', result.Precision())
     print('recall: ', result.Recall())
     print('coverage ', result.Coverage())
+
+
+
+
+
+
