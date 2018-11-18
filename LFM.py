@@ -2,6 +2,7 @@
 import math
 import numpy as np
 import random
+import re
 from operator import itemgetter
 
 REC_NUMBER = 10
@@ -17,7 +18,11 @@ def SplitData(filename, M, seed):           #读取数据，分割为训练集�
         for i, line in enumerate(f):
             if i == 0:
                 continue
-            user, movie, rating, timestamp = line.split(',')
+            #user, movie, rating, timestamp = line.split(' ')
+            temp = re.split('\s+', line)
+            user = temp[0]
+            movie = temp[1]
+            rating = temp[2]
             user = int(user)
             if float(rating) < 4:                   #此处int(rating)会报错；4分以下的评分忽略
                 continue
@@ -37,10 +42,10 @@ def InitLFM(train):
     q = dict()
     for u in train.keys():
         if u not in p:
-            p[u] = np.random.rand(F) / math.sqrt(F)
+            p[u] = np.random.rand(F)
         for i in train[u]:
             if i not in q:
-                q[i] = np.random.rand(F) / math.sqrt(F)
+                q[i] = np.random.rand(F)
     return (p, q)
 
 def LearningLFM(train, n, lam):
@@ -57,8 +62,10 @@ def LearningLFM(train, n, lam):
                     total_error += np.abs(eui)
                     p[u] += alpha * (q[i] * eui - lam * p[u])
                     q[i] += alpha * (p[u] * eui - lam * q[i])
-        print(step, ':',total_error)
-        alpha *= 0.9
+        if alpha > 0.00001:
+            alpha *= 0.9
+        print(step, ':',total_error, 'alpha:', alpha)
+
     return p, q
 
 def Recommend(p, q, user, train):
@@ -67,8 +74,8 @@ def Recommend(p, q, user, train):
     for i in q:
         if i in train[user]:
             continue
-        rank.setdefault(i, [])
-        rank[i].append(np.dot(p[user], q[i]))
+        rank.setdefault(i, 0)
+        rank[i] = np.dot(p[user], q[i])
     return sorted(rank.items(), key=itemgetter(1), reverse=True)[:n]
 
 class Evaluation():
@@ -105,7 +112,7 @@ class Evaluation():
 
 
 if __name__ == '__main__':
-    filename = '/home/ssw/coding/Python_project/recommendation/ml-latest-small/ratings.csv'
+    filename = '/home/ssw/coding/Python_project/recommendation/ml-100k/u.data'
     test, train = SplitData(filename, 5, 10)
     (p, q) = LearningLFM(train, 100, 0.01)        #input: train, epcho, lambda
     result = Evaluation(train, test, p, q)
@@ -113,6 +120,8 @@ if __name__ == '__main__':
     print('precision: ', result.Precision())
     print('recall: ', result.Recall())
     print('coverage ', result.Coverage())
+    rank = Recommend(p, q, 1, train)
+    print(rank)
 
 
 
