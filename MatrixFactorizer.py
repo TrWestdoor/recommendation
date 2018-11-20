@@ -27,14 +27,12 @@ def SplitData(filename, M, seed):           #读取数据，分割为训练集�
             temp = re.split('\s+', line)
             user = temp[0]; movie = temp[1]; rating = temp[2]
             user = int(user)
-            if float(rating) < 4:                   #此处int(rating)会报错；4分以下的评分忽略
-                continue
             if random.randint(1,M) == 1:
                 test.setdefault(user, {})
-                test[user][movie] = 1
+                test[user][movie] = rating
             else:
                 train.setdefault(user, {})
-                train[user][movie] = 1
+                train[user][movie] = rating
     return test, train
 
 
@@ -44,29 +42,6 @@ def InitAllItemSet(user_items):
         for i, r in items.items():
             allItemSet.add(i)
 
-
-def InitItems_Pool(items):
-    interacted_items = set(items.keys())
-    items_pool = list(allItemSet - interacted_items)
-    #    items_pool = list(allItemSet)
-    return items_pool           #input some watched movies with dict format, and return reamain movies in all movies set with list format
-
-
-def RandSelectNegativeSample(items):
-    ret = dict()
-    for i in items.keys():
-        ret[i] = 1
-    n = 0
-    for i in range(0, len(items) * 3):
-        items_pool = InitItems_Pool(items)
-        item = items_pool[random.randint(0, len(items_pool) - 1)]
-        if item in ret:
-            continue
-        ret[item] = 0
-        n += 1
-        if n > len(items):
-            break
-    return ret
 
 
 def Predict(user, item, P, Q):
@@ -99,15 +74,13 @@ def LatentFactorModel(user_items, F, T, alpha, lamb):   #dict{userID: {}}, F:lat
     for step in range(0, T):                    #training loop
         totalerr = 0
         for user, items in user_items.items():
-            # not only negative sample, also have positive samples
-            samples = RandSelectNegativeSample(items)
-            for item, rui in samples.items():
-                eui = rui - Predict(user, item, P, Q)
+            for item, rui in items.items():
+                eui = int(rui) - Predict(user, item, P, Q)
                 totalerr += abs(eui)
                 for f in range(0, F):
                     P[user][f] += alpha * (eui * Q[item][f] - lamb * P[user][f])
                     Q[item][f] += alpha * (eui * P[user][f] - lamb * Q[item][f])
-        alpha *= 0.9
+        alpha *= 0.99
         looop += 1
         print(looop, ':', totalerr)
     return P, Q
@@ -127,14 +100,6 @@ def Recommend(P, Q, user, train):
     return sorted(rank.items(), key=operator.itemgetter(1), reverse=True)[:n]
 
 
-def Recommendation(users, train, P, Q):
-    result = dict()
-    for user in users:
-        rank = Recommend(user, train, P, Q)
-        R = sorted(rank.items(), key=operator.itemgetter(1), reverse=True)
-        result[user] = R
-    return result
-
 class Evaluation():
 
     def __init__(self, train, test, p, q):
@@ -151,7 +116,6 @@ class Evaluation():
         for user in self.train.keys():
             tu = self.test.get(user, {})  # user corresponding movie list in the test.
             rank = Recommend(self.p, self.q, user, self.train)
-
             for item, _ in rank:
                 if item in tu:
                     self.hit += 1
@@ -169,17 +133,18 @@ class Evaluation():
 
 if __name__ == '__main__':
     filename = './ml-100k/u.data'
-    test, train = SplitData(filename, 8, 10)
-    (p, q) = LatentFactorModel(train, 50, 10000, 0.02, 0.01)        #input: train, F, epcho, alpha, lambda
+    test, train = SplitData(filename, 8, random.random())
+    (p, q) = LatentFactorModel(train, 10, 100, 0.05, 0.01)        #input: train, F, epcho, alpha, lambda
     result = Evaluation(train, test, p, q)
     result.run()
     print('precision: ', result.Precision())
     print('recall: ', result.Recall())
     print('coverage ', result.Coverage())
-    with open('./Pmatrix.json', 'w') as f:
+    writefile = './Result/11.19/2'
+    with open(writefile + '/Pmatrix.json', 'w') as f:
         pjson = json.dumps(p)
         f.write(pjson)
         p = json.loads(pjson)
-    with open('./Qmatrix.json', 'w') as f:
+    with open(writefile + '/Qmatrix.json', 'w') as f:
         qjson = json.dumps(q)
         f.write(qjson)

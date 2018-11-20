@@ -62,8 +62,7 @@ def LearningLFM(train, n, lam):
                     total_error += np.abs(eui)
                     p[u] += alpha * (q[i] * eui - lam * p[u])
                     q[i] += alpha * (p[u] * eui - lam * q[i])
-        if alpha > 0.00001:
-            alpha *= 0.9
+        alpha *= 0.9
         print(step, ':',total_error, 'alpha:', alpha)
 
     return p, q
@@ -120,9 +119,6 @@ if __name__ == '__main__':
     print('precision: ', result.Precision())
     print('recall: ', result.Recall())
     print('coverage ', result.Coverage())
-    rank = Recommend(p, q, 1, train)
-    print(rank)
-
 
 
 
