@@ -9,6 +9,7 @@ import random
 import operator
 import json
 import re
+import pdb
 
 REC_NUMBER = 10
 
@@ -23,7 +24,7 @@ def SplitData(filename, M, seed):           #读取数据，分割为训练集�
         for i, line in enumerate(f):
             if i == 0:
                 continue
-            #user, movie, rating, timestamp = line.split(' ')
+#            user, movie, rating, timestamp = line.split(' ')
             temp = re.split('\s+', line)
             user = temp[0]; movie = temp[1]; rating = temp[2]
             user = int(user)
@@ -77,12 +78,13 @@ def LatentFactorModel(user_items, F, T, alpha, lamb):   #dict{userID: {}}, F:lat
             for item, rui in items.items():
                 eui = int(rui) - Predict(user, item, P, Q)
                 totalerr += abs(eui)
+                print(eui)
                 for f in range(0, F):
                     P[user][f] += alpha * (eui * Q[item][f] - lamb * P[user][f])
                     Q[item][f] += alpha * (eui * P[user][f] - lamb * Q[item][f])
         alpha *= 0.99
         looop += 1
-        print(looop, ':', totalerr)
+        print(looop, ':', totalerr, type(totalerr))
     return P, Q
 
 
@@ -134,7 +136,9 @@ class Evaluation():
 if __name__ == '__main__':
     filename = './ml-100k/u.data'
     test, train = SplitData(filename, 8, random.random())
-    (p, q) = LatentFactorModel(train, 10, 100, 0.05, 0.01)        #input: train, F, epcho, alpha, lambda
+    print(test)
+#    pdb.set_trace()
+    (p, q) = LatentFactorModel(train, 20, 100, 0.05, 0.01)        #input: train, F, epcho, alpha, lambda
     result = Evaluation(train, test, p, q)
     result.run()
     print('precision: ', result.Precision())
