@@ -1,7 +1,7 @@
 # coding = utf-8
 
 # 基于用户的协同过滤推荐算法实现
-import tensorflow as tf
+# import tensorflow as tf
 import random
 import sys
 import time
@@ -138,7 +138,7 @@ class UserBasedCF():
 
 
 if __name__ == '__main__':
-    rating_file = '/home/ssw/coding/Python_project/recommendation/ml-latest-small/ratings.csv'
+    rating_file = './ml-latest-small/ratings.csv'
     userCF = UserBasedCF()
     userCF.get_dataset(rating_file)
     userCF.calc_user_sim()
