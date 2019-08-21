@@ -9,26 +9,36 @@ import random
 import operator
 import json
 import re
+import numpy as np
+
 
 REC_NUMBER = 10
 
 allItemSet = set()
 
 
-def SplitData(filename, M, seed):           #读取数据，分割为训练集和测试集：M表示 1/M 的样本为测试集
+def SplitData(filename, M, seed):
+    # 读取数据，分割为训练集和测试集：M表示 1/M 的样本为测试集
     test = dict()
-    train = dict()                          #数据集以dict的方式存储，key为user id， value为user看过的movie id组成的list
+    train = dict()
+    # 数据集以dict的方式存储，key为user id， value为user看过的movie id组成的list
     random.seed(seed)
-    with open(filename,'r') as f:
+    with open(filename, 'r') as f:
         for i, line in enumerate(f):
             if i == 0:
                 continue
-            #user, movie, rating, timestamp = line.split(' ')
-            temp = re.split('\s+', line)
-            user = temp[0]; movie = temp[1]; rating = temp[2]
-            user = int(user)
-            if float(rating) < 4:                   #此处int(rating)会报错；4分以下的评分忽略
+            # user, movie, rating, timestamp = line.split(' ')
+            temp = re.split(',', line)
+            user = int(temp[0])
+            movie = int(temp[1])
+            rating = temp[2]
+            # user = int(user)
+
+            # 此处int(rating)会报错；4分以下的评分忽略
+            if float(rating) < 4:
                 continue
+
+            # 分割数据集
             if random.randint(1,M) == 1:
                 test.setdefault(user, {})
                 test[user][movie] = 1
@@ -49,7 +59,9 @@ def InitItems_Pool(items):
     interacted_items = set(items.keys())
     items_pool = list(allItemSet - interacted_items)
     #    items_pool = list(allItemSet)
-    return items_pool           #input some watched movies with dict format, and return reamain movies in all movies set with list format
+    return items_pool
+    # input some watched movies with dict format,
+    # and return remain movies in all movies set with list format
 
 
 def RandSelectNegativeSample(items):
@@ -77,39 +89,59 @@ def Predict(user, item, P, Q):
     return rate
 
 
-def InitModel(user_items, F):
-    P = dict()
-    Q = dict()
-    for user, items in user_items.items():
-        P[user] = dict()
-        for f in range(0, F):
-            P[user][f] = random.random()
-        for i, r in items.items():
-            if i not in Q:
-                Q[i] = dict()
-                for f in range(0, F):
-                    Q[i][f] = random.random()
-    return P, Q
+# def InitModel(user_items, F):
+#     P = dict()
+#     Q = dict()
+#     for user, items in user_items.items():
+#         P[user] = dict()
+#         for f in range(0, F):
+#             P[user][f] = random.random()
+#         for i, r in items.items():
+#             if i not in Q:
+#                 Q[i] = dict()
+#                 for f in range(0, F):
+#                     Q[i][f] = random.random()
+#     print(len(P), len(Q))
+#     return P, Q
 
-def LatentFactorModel(user_items, F, T, alpha, lamb):   #dict{userID: {}}, F:latent factor, echo nubmer, learning rate, lambda
+
+def init_model(user_items, attribute_num):
+    user_num = max(user_items.keys())
+    item_list = []
+    for items in user_items.values():
+        for item in items.keys():
+            # print(item)
+            if item not in item_list:
+                item_list.append(item)
+    p_mat = np.random.random((user_num, attribute_num))
+    q_mat = np.random.random((max(item_list), attribute_num))
+    return p_mat, q_mat
+
+
+# dict{userID: {}}, F:latent factor, echo nubmer, learning rate, lambda
+def LatentFactorModel(user_items, F, T, alpha, lamb):
     InitAllItemSet(user_items)
     # P, Q are dict, and every value also are dict
-    [P, Q] = InitModel(user_items, F)
-    looop = 0
-    for step in range(0, T):                    #training loop
-        totalerr = 0
+    # [P, Q] = InitModel(user_items, F)
+    P, Q = init_model(user_items, F)
+
+    loop = 0
+    # training loop
+    for step in range(0, T):
+        total_err = 0
         for user, items in user_items.items():
             # not only negative sample, also have positive samples
             samples = RandSelectNegativeSample(items)
             for item, rui in samples.items():
-                eui = rui - Predict(user, item, P, Q)
-                totalerr += abs(eui)
+                # eui = rui - Predict(user, item, P, Q)
+                eui = rui - np.dot(P[user-1], Q[item-1])
+                total_err += abs(eui)
                 for f in range(0, F):
-                    P[user][f] += alpha * (eui * Q[item][f] - lamb * P[user][f])
-                    Q[item][f] += alpha * (eui * P[user][f] - lamb * Q[item][f])
+                    P[user-1][f] += alpha * (eui * Q[item-1][f] - lamb * P[user-1][f])
+                    Q[item-1][f] += alpha * (eui * P[user-1][f] - lamb * Q[item-1][f])
         alpha *= 0.9
-        looop += 1
-        print(looop, ':', totalerr)
+        loop += 1
+        print(loop, ':', total_err)
     return P, Q
 
 
@@ -117,13 +149,12 @@ def Recommend(P, Q, user, train):
     n = REC_NUMBER
     rank = dict()
     interacted_items = train[user]
-    for i in Q:
+    for i in range(np.shape(Q)[0]):
         if i in interacted_items.keys():
             continue
-        rank.setdefault(i, 0)
-        for f, qif in Q[i].items():
-            puf = P[user][f]
-            rank[i] += puf * qif
+        ri = np.dot(P[user-1], Q[i])
+        rank.setdefault(i, ri)
+
     return sorted(rank.items(), key=operator.itemgetter(1), reverse=True)[:n]
 
 
@@ -135,7 +166,8 @@ def Recommendation(users, train, P, Q):
         result[user] = R
     return result
 
-class Evaluation():
+
+class Evaluation:
 
     def __init__(self, train, test, p, q):
         self.train = train
@@ -167,10 +199,12 @@ class Evaluation():
     def Coverage(self):
         return len(self.recommend_items) / (len(self.q) * 1.0)
 
-if __name__ == '__main__':
-    filename = './ml-100k/u.data'
+
+def main():
+    filename = './ml-latest-small/ratings.csv'
     test, train = SplitData(filename, 8, 10)
-    (p, q) = LatentFactorModel(train, 50, 10000, 0.02, 0.01)        #input: train, F, epcho, alpha, lambda
+    # LatentFactorModel function input: train, F, epoch, alpha, lambda
+    p, q = LatentFactorModel(train, 50, 2, 0.02, 0.01)
     result = Evaluation(train, test, p, q)
     result.run()
     print('precision: ', result.Precision())
@@ -183,3 +217,7 @@ if __name__ == '__main__':
     with open('./Qmatrix.json', 'w') as f:
         qjson = json.dumps(q)
         f.write(qjson)
+
+
+if __name__ == '__main__':
+    main()
