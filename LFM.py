@@ -19,7 +19,7 @@ def SplitData(filename, M, seed):           #读取数据，分割为训练集�
             if i == 0:
                 continue
             #user, movie, rating, timestamp = line.split(' ')
-            temp = re.split('\s+', line)
+            temp = re.split(',', line)
             user = temp[0]
             movie = temp[1]
             rating = temp[2]
@@ -111,9 +111,11 @@ class Evaluation():
 
 
 if __name__ == '__main__':
-    filename = '/home/ssw/coding/Python_project/recommendation/ml-100k/u.data'
+    filename = './ml-latest-small/ratings.csv'
     test, train = SplitData(filename, 5, 10)
-    (p, q) = LearningLFM(train, 100, 0.01)        #input: train, epcho, lambda
+    
+    # input: train, epoch, lambda
+    (p, q) = LearningLFM(train, 100, 0.01)        
     result = Evaluation(train, test, p, q)
     result.run()
     print('precision: ', result.Precision())
