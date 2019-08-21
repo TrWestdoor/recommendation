@@ -1,11 +1,11 @@
-# coding = utf-8
+# -*- coding: utf-8 -*-
 
 # 基于用户的协同过滤推荐算法实现
 # import tensorflow as tf
 import random
 import sys
 import time
-import mpmath
+import math
 from operator import itemgetter
 
 
@@ -89,7 +89,7 @@ class UserBasedCF():
         print('Calculating user similarity matrix ...')
         for u, related_users in self.user_sim_matrix.items():
             for v, count in related_users.items():
-                self.user_sim_matrix[u][v] = count / mpmath.sqrt(len(self.trainSet[u]) * len(self.trainSet[v]))
+                self.user_sim_matrix[u][v] = count / math.sqrt(len(self.trainSet[u]) * len(self.trainSet[v]))
         print('Calculate user similarity matrix success!')
 
 
