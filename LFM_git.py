@@ -139,7 +139,7 @@ def LatentFactorModel(user_items, F, T, alpha, lamb):
                 for f in range(0, F):
                     P[user-1][f] += alpha * (eui * Q[item-1][f] - lamb * P[user-1][f])
                     Q[item-1][f] += alpha * (eui * P[user-1][f] - lamb * Q[item-1][f])
-        alpha *= 0.9
+        alpha *= 0.95
         loop += 1
         print(loop, ':', total_err)
     return P, Q
@@ -204,18 +204,18 @@ def main():
     filename = './ml-latest-small/ratings.csv'
     test, train = SplitData(filename, 8, 10)
     # LatentFactorModel function input: train, F, epoch, alpha, lambda
-    p, q = LatentFactorModel(train, 50, 2, 0.02, 0.01)
+    p, q = LatentFactorModel(train, 50, 20, 0.1, 0.01)
     result = Evaluation(train, test, p, q)
     result.run()
     print('precision: ', result.Precision())
     print('recall: ', result.Recall())
     print('coverage ', result.Coverage())
     with open('./Pmatrix.json', 'w') as f:
-        pjson = json.dumps(p)
+        pjson = json.dumps(p.tolist())
         f.write(pjson)
         p = json.loads(pjson)
     with open('./Qmatrix.json', 'w') as f:
-        qjson = json.dumps(q)
+        qjson = json.dumps(q.tolist())
         f.write(qjson)
 
 
