@@ -6,25 +6,25 @@ import re
 from operator import itemgetter
 
 REC_NUMBER = 10
-F = 10 #latent factor numbers
+F = 10  # latent factor numbers
 ALPHA = 0.02
 
 
-def SplitData(filename, M, seed):           #读取数据，分割为训练集和测试集：M表示 1/M 的样本为测试集
+def SplitData(filename, M, seed):           # 读取数据，分割为训练集和测试集：M表示 1/M 的样本为测试集
     test = dict()
-    train = dict()                          #数据集以dict的方式存储，key为user id， value为user看过的movie id组成的list
+    train = dict()                          # 数据集以dict的方式存储，key为user id， value为user看过的movie id组成的list
     random.seed(seed)
     with open(filename,'r') as f:
         for i, line in enumerate(f):
             if i == 0:
                 continue
-            #user, movie, rating, timestamp = line.split(' ')
+            # user, movie, rating, timestamp = line.split(' ')
             temp = re.split(',', line)
             user = temp[0]
             movie = temp[1]
             rating = temp[2]
             user = int(user)
-            if float(rating) < 4:                   #此处int(rating)会报错；4分以下的评分忽略
+            if float(rating) < 4:                   # 此处int(rating)会报错；4分以下的评分忽略
                 continue
             if random.randint(1,M) == 1:
                 if user not in test:
@@ -46,7 +46,8 @@ def InitLFM(train):
         for i in train[u]:
             if i not in q:
                 q[i] = np.random.rand(F)
-    return (p, q)
+    return p, q
+
 
 def LearningLFM(train, n, lam):
     (p,q) = InitLFM(train)
@@ -67,6 +68,7 @@ def LearningLFM(train, n, lam):
 
     return p, q
 
+
 def Recommend(p, q, user, train):
     n = REC_NUMBER
     rank = {}
@@ -76,6 +78,7 @@ def Recommend(p, q, user, train):
         rank.setdefault(i, 0)
         rank[i] = np.dot(p[user], q[i])
     return sorted(rank.items(), key=itemgetter(1), reverse=True)[:n]
+
 
 class Evaluation():
 
@@ -110,18 +113,21 @@ class Evaluation():
         return len(self.recommend_items) / (len(self.q) * 1.0)
 
 
-if __name__ == '__main__':
+def main():
     filename = './ml-latest-small/ratings.csv'
     test, train = SplitData(filename, 5, 10)
-    
+
     # input: train, epoch, lambda
-    (p, q) = LearningLFM(train, 100, 0.01)        
+    (p, q) = LearningLFM(train, 100, 0.01)
     result = Evaluation(train, test, p, q)
     result.run()
     print('precision: ', result.Precision())
     print('recall: ', result.Recall())
     print('coverage ', result.Coverage())
 
+
+if __name__ == '__main__':
+    main()
 
 
 

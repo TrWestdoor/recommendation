@@ -136,9 +136,11 @@ def LatentFactorModel(user_items, F, T, alpha, lamb):
                 # eui = rui - Predict(user, item, P, Q)
                 eui = rui - np.dot(P[user-1], Q[item-1])
                 total_err += abs(eui)
+                # import pdb; pdb.set_trace()
                 for f in range(0, F):
                     P[user-1][f] += alpha * (eui * Q[item-1][f] - lamb * P[user-1][f])
                     Q[item-1][f] += alpha * (eui * P[user-1][f] - lamb * Q[item-1][f])
+                # P[user-1] += alpha * (eui * )
         alpha *= 0.95
         loop += 1
         print(loop, ':', total_err)
@@ -204,7 +206,7 @@ def main():
     filename = './ml-latest-small/ratings.csv'
     test, train = SplitData(filename, 8, 10)
     # LatentFactorModel function input: train, F, epoch, alpha, lambda
-    p, q = LatentFactorModel(train, 50, 20, 0.1, 0.01)
+    p, q = LatentFactorModel(train, 5, 20, 0.1, 0.01)
     result = Evaluation(train, test, p, q)
     result.run()
     print('precision: ', result.Precision())
