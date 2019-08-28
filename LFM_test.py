@@ -60,6 +60,22 @@ def initpara(users, items, F):
     return p, q
 
 
+def rand_select_negative_sample(items_pool, positive_samples):
+    ret = dict()
+    for i in positive_samples.keys():
+        ret[i] = 1
+    n = 0
+    for i in range(0, len(positive_samples) * 3):
+        item = items_pool[random.randint(0, len(items_pool) - 1)]
+        if item in ret:
+            continue
+        ret[item] = -1
+        n += 1
+        if n > len(positive_samples):
+            break
+    return ret
+
+
 def initsamples(user_items):
     user_samples = []
     items_pool = []
@@ -72,6 +88,10 @@ def initsamples(user_items):
         for itemid, score in items.items():
             if score != 0:
                 samples[itemid] = score
+
+        # add negative samples
+        samples = rand_select_negative_sample(items_pool, samples)
+
         user_samples.append((userid, samples))
 
     return user_samples
@@ -90,7 +110,7 @@ def predict(userid, itemid, p, q):
 
 
 def lfm(user_items, users, items, F, N, alpha, lamda):
-    '''
+    """
     LFM计算参数 p,q
     :param user_items: user_items
     :param users: users
@@ -100,7 +120,7 @@ def lfm(user_items, users, items, F, N, alpha, lamda):
     :param alpha: 步长
     :param lamda: 正则化参数
     :return: p,q
-    '''
+    """
     p, q, user_samples = initmodel(user_items, users, items, F)
 
     debugid1 = 0
@@ -118,16 +138,16 @@ def lfm(user_items, users, items, F, N, alpha, lamda):
                 # error += math.pow(eui, 2)
                 error += abs(eui)
                 '''debug'''
-                if userid == 1:
-                    if debugid1 == 0 and rui == 1:
-                        debugid1 = itemid
-                    if debugid2 == 0 and rui == -1:
-                        debugid2 = itemid
-
-                if userid == 1 and itemid == debugid1:
-                    print(debugid1, rui, pui, eui, alpha)
-                if userid == 1 and itemid == debugid2:
-                    print(debugid2, rui, pui, eui, alpha)
+                # if userid == 1:
+                #     if debugid1 == 0 and rui == 1:
+                #         debugid1 = itemid
+                #     if debugid2 == 0 and rui == -1:
+                #         debugid2 = itemid
+                #
+                # if userid == 1 and itemid == debugid1:
+                #     print(debugid1, rui, pui, eui, alpha)
+                # if userid == 1 and itemid == debugid2:
+                #     print(debugid2, rui, pui, eui, alpha)
 
                 '''debug end'''
 
@@ -140,7 +160,7 @@ def lfm(user_items, users, items, F, N, alpha, lamda):
 
         # rmse = math.sqrt(error / count)
         # print("rmse:", rmse)
-        alpha *= 0.9
+        alpha *= 0.95
         print("error: ", error)
     return p, q
 
@@ -186,7 +206,7 @@ def train_result(user_items, p, q):
 
 class Evaluation:
 
-    def __init__(self, train, test, p, q):
+    def __init__(self, train, test, p, q, items):
         self.train = train
         self.test = test
         self.p = p
@@ -195,17 +215,17 @@ class Evaluation:
         self.hit = 0
         self.all = 0
         self.recommend_items = set()
+        self.items = items
 
-    def Recommend(P, Q, user, train):
+    def Recommend(self, P, Q, user, train):
         n = REC_NUMBER
         rank = dict()
         interacted_items = train[user]
-        for i in range(np.shape(Q)[0]):
+        for i in self.items:
             if i in interacted_items.keys():
                 continue
-            ri = 0
-            # for i in range()
             # ri = np.dot(P[user - 1], Q[i])
+            ri = predict(user, i, P, Q)
             rank.setdefault(i, ri)
 
         return sorted(rank.items(), key=operator.itemgetter(1), reverse=True)[:n]
@@ -231,8 +251,8 @@ class Evaluation:
         return len(self.recommend_items) / (len(self.q) * 1.0)
 
 
-def evaluation(train, test, p, q):
-    result = Evaluation(train, test, p, q)
+def evaluation(train, test, p, q, items):
+    result = Evaluation(train, test, p, q, items)
     result.run()
     print('precision: ', result.Precision())
     print('recall: ', result.Recall())
@@ -245,14 +265,14 @@ def main():
     user_items, users, items, test = pre_data(filename)
 
     F = 10
-    N = 30
+    N = 300
     alpha = 0.3
     lamda = 0.03
     p, q = lfm(user_items, users, items, F, N, alpha, lamda)
 
     train_result(user_items, p, q)
-    print(p)
-    # evaluation()
+    # print(p)
+    evaluation(user_items, test, p, q, items)
 
     print('end')
     return
