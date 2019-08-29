@@ -42,8 +42,14 @@ def pre_data(filename):
     users = set(user_items.keys())
     items = [item for user_item in user_items.values() for item in user_item]
     items = set(items)
-    print(users)
-    print(items)
+
+    for user in test.keys():
+        users.add(user)
+    for test_item in test.values():
+        for item in test_item:
+            items.add(item)
+    # print(users)
+    # print(items)
     return user_items, users, items, test
 
 
@@ -67,7 +73,7 @@ def rand_select_negative_sample(items_pool, positive_samples):
     n = 0
     for i in range(0, len(positive_samples) * 3):
         item = items_pool[random.randint(0, len(items_pool) - 1)]
-        if item in ret:
+        if item in ret or item not in items_pool:
             continue
         ret[item] = -1
         n += 1
@@ -89,8 +95,10 @@ def initsamples(user_items):
             if score != 0:
                 samples[itemid] = score
 
+        print("init samples: ", samples)
         # add negative samples
-        samples = rand_select_negative_sample(items_pool, samples)
+        new_samples = rand_select_negative_sample(items_pool, samples)
+        print("add negative samples: ", new_samples)
 
         user_samples.append((userid, samples))
 
@@ -174,33 +182,21 @@ def predictlist(userid, items, p, q):
     return predict_score
 
 
-def train_result(user_items, p, q):
-    # user_items = {1: {'a': 1, 'b': -1, 'c': -1, 'd': -1, 'e': 1, 'f': 1, 'g': -1},
-    #               2: {'a': -1, 'b': 1, 'c': -1, 'd': 1, 'e': 1, 'f': 1, 'g': 1},
-    #               3: {'a': 1, 'b': -1, 'c': 0, 'd': -1, 'e': -1, 'f': -1, 'g': 1},
-    #               4: {'a': 1, 'b': -1, 'c': -1, 'd': 0, 'e': 1, 'f': 1, 'g': 1},
-    #               5: {'a': -1, 'b': 1, 'c': 1, 'd': 1, 'e': -1, 'f': -1, 'g': 0},
-    #               6: {'a': 1, 'b': 0, 'c': -1, 'd': -1, 'e': 1, 'f': -1, 'g': -1}}
-    # users = {1, 2, 3, 4, 5, 6}
-    # items = {'a', 'b', 'c', 'd', 'e', 'f', 'g'}
-    # for values in user_items.values():
-    #     for item in items:
-    #         if values[item] != 1:
-    #             values.pop(item)
-    # print(user_items)
-    #
-    # F = 5
-    # N = 30
-    # alpha = 0.3
-    # lamda = 0.03
-    # p, q = lfm(user_items, users, items, F, N, alpha, lamda)
-
+def train_result(user_items, items, p, q):
     for userid, itemdic in user_items.items():
-        print(userid)
+        print("user id: ", userid)
         print("target", itemdic)
         predict_score = predictlist(userid, itemdic, p, q)
         print("predicted", predict_score)
 
+        # check unknown item score
+        # unknown_item = [random.randint(0, 10000) for i in range(10)]
+        items_list = list(items)
+        unknown_item = [items_list[random.randint(0, len(items)-1)] for _ in range(10)]
+        for i in unknown_item:
+            if i not in items:
+                unknown_item.remove(i)
+        print("unknown item score: ", predictlist(userid, unknown_item, p, q))
     return
 
 
@@ -265,12 +261,12 @@ def main():
     user_items, users, items, test = pre_data(filename)
 
     F = 10
-    N = 300
+    N = 10
     alpha = 0.3
     lamda = 0.03
     p, q = lfm(user_items, users, items, F, N, alpha, lamda)
 
-    train_result(user_items, p, q)
+    train_result(user_items, items, p, q)
     # print(p)
     evaluation(user_items, test, p, q, items)
 
