@@ -145,8 +145,8 @@ class Evaluation():
 
 
 if __name__ == '__main__':
-    #filename = './ml-latest-small/ratings.csv'
-    filename = './ml-100k/u.data'
+    filename = './ml-latest-small/ratings.csv'
+    # filename = './ml-100k/u.data'
     test, train = SplitData(filename, 5, random.random())
     W = UserSimilarity(train)
     result = Evaluation(train, test, W)
