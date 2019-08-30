@@ -75,7 +75,7 @@ def rand_select_negative_sample(items_pool, positive_samples):
         item = items_pool[random.randint(0, len(items_pool) - 1)]
         if item in ret or item not in items_pool:
             continue
-        ret[item] = -1
+        ret[item] = 0
         n += 1
         if n > len(positive_samples):
             break
@@ -100,7 +100,7 @@ def initsamples(user_items):
         new_samples = rand_select_negative_sample(items_pool, samples)
         print("add negative samples: ", new_samples)
 
-        user_samples.append((userid, samples))
+        user_samples.append((userid, new_samples))
 
     return user_samples
 
@@ -261,12 +261,12 @@ def main():
     user_items, users, items, test = pre_data(filename)
 
     F = 10
-    N = 10
+    N = 100
     alpha = 0.3
     lamda = 0.03
     p, q = lfm(user_items, users, items, F, N, alpha, lamda)
 
-    train_result(user_items, items, p, q)
+    # train_result(user_items, items, p, q)
     # print(p)
     evaluation(user_items, test, p, q, items)
 
