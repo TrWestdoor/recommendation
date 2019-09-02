@@ -168,7 +168,7 @@ def lfm(user_items, users, items, F, N, alpha, lamda):
 
         # rmse = math.sqrt(error / count)
         # print("rmse:", rmse)
-        alpha *= 0.95
+        # alpha *= 0.95
         print("error: ", error)
     return p, q
 
@@ -262,7 +262,7 @@ def main():
 
     F = 10
     N = 100
-    alpha = 0.3
+    alpha = 0.05
     lamda = 0.03
     p, q = lfm(user_items, users, items, F, N, alpha, lamda)
 

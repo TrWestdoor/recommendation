@@ -134,7 +134,7 @@ class UserBasedCF():
         precision = hit / (1.0 * rec_count)
         recall = hit / (1.0 * test_count)
         coverage = len(all_rec_movies) / (1.0 * self.movie_count)
-        print('precisioin=%.4f\trecall=%.4f\tcoverage=%.4f' % (precision, recall, coverage))
+        print('precision=%.4f \t recall=%.4f \t coverage=%.4f' % (precision, recall, coverage))
 
 
 if __name__ == '__main__':
