@@ -260,10 +260,10 @@ def main():
     filename = './ml-latest-small/ratings.csv'
     user_items, users, items, test = pre_data(filename)
 
-    F = 10
+    F = 30
     N = 100
-    alpha = 0.05
-    lamda = 0.03
+    alpha = 0.1
+    lamda = 0.05
     p, q = lfm(user_items, users, items, F, N, alpha, lamda)
 
     # train_result(user_items, items, p, q)
