@@ -8,19 +8,24 @@ from operator import itemgetter
 REC_NUMBER = 10
 similarity_user = 50
 
-def SplitData(filename, M, seed):           #读取数据，分割为训练集和测试集：M表示 1/M 的样本为测试集
+
+# 读取数据，分割为训练集和测试集：M表示 1/M 的样本为测试集
+def SplitData(filename, M, seed):
     test = dict()
-    train = dict()                          #数据集以dict的方式存储，key为user id， value为user看过的movie id组成的list
+    train = dict()
+    # 数据集以dict的方式存储，key为user id， value为user看过的movie id组成的list
     random.seed(seed)
-    with open(filename,'r') as f:
+    with open(filename, 'r') as f:
         for i, line in enumerate(f):
             if i == 0:
                 continue
-            #user, movie, rating, timestamp = line.split(' ')
+            # user, movie, rating, timestamp = line.split(' ')
             temp = re.split('\s+', line)
             user = temp[0]; movie = temp[1]; rating = temp[2]
             user = int(user)
-            if float(rating) < 4:                   #此处int(rating)会报错；4分以下的评分忽略
+
+            # 此处int(rating)会报错；4分以下的评分忽略
+            if float(rating) < 4:
                 continue
             if random.randint(1,M) == 1:
                 if user not in test:
@@ -33,9 +38,8 @@ def SplitData(filename, M, seed):           #读取数据，分割为训练集�
     return test, train
 
 
-
 def UserSimilarity(train):
-    #build inverse table for item_users: it's shown that each item was selected by which users
+    # build inverse table for item_users: it's shown that each item was selected by which users
     item_users = {}
     for u, items in train.items():
         for i in items:
@@ -53,23 +57,26 @@ def UserSimilarity(train):
                 user_sim_matrix[u].setdefault(v, 0)
                 user_sim_matrix[u][v] += 1
 
-    #calculate finial similarity matrix W
+    # calculate finial similarity matrix W
     for u, related_users in user_sim_matrix.items():
         for v, cuv in related_users.items():
             user_sim_matrix[u][v] = cuv / math.sqrt(len(train[u]) * len(train[v]))
     return user_sim_matrix
 
+
 def Recommend(user, train, W):
     rank = dict()
     k = similarity_user
     watched_items = train[user]
-    for v, wuv in sorted(W[user].items(),key=itemgetter(1), reverse=True)[:k]:      #obtained most k user which similarity given user
+    # obtained most k user which similarity given user
+    for v, wuv in sorted(W[user].items(),key=itemgetter(1), reverse=True)[:k]:
         for movie in train[v]:
             if movie in watched_items:
                 continue
             rank.setdefault(movie, 0)
             rank[movie] += wuv
-    #return most n movies which have large probability given user will like these. Return type: [{movieID: similarity score}, {},...,{}]
+    # return most n movies which have large probability given user will like these.
+    # Return type: [{movieID: similarity score}, {},...,{}]
     return sorted(rank.items(), key=itemgetter(1), reverse=True)
 
 
@@ -144,7 +151,7 @@ class Evaluation():
         print('After filtering: ', len(self.recommend_items_filter) / (len(self.all_items) * 1.0))
 
 
-if __name__ == '__main__':
+def main():
     filename = './ml-latest-small/ratings.csv'
     # filename = './ml-100k/u.data'
     test, train = SplitData(filename, 5, random.random())
@@ -156,3 +163,7 @@ if __name__ == '__main__':
     result.Recall()
     print('\n')
     result.Coverage()
+
+
+if __name__ == '__main__':
+    main()
