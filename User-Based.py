@@ -20,8 +20,10 @@ def SplitData(filename, M, seed):
             if i == 0:
                 continue
             # user, movie, rating, timestamp = line.split(' ')
-            temp = re.split('\s+', line)
-            user = temp[0]; movie = temp[1]; rating = temp[2]
+            temp = re.split(',', line)
+            user = temp[0]
+            movie = temp[1]
+            rating = temp[2]
             user = int(user)
 
             # 此处int(rating)会报错；4分以下的评分忽略
@@ -80,7 +82,7 @@ def Recommend(user, train, W):
     return sorted(rank.items(), key=itemgetter(1), reverse=True)
 
 
-class Evaluation():
+class Evaluation:
 
     def __init__(self, train, test, W):
         self.train = train
@@ -93,11 +95,26 @@ class Evaluation():
         self.recommend_items = set()
         self.recommend_items_filter = set()
         self.all_items = set()
-        readfile = '.'#'./Result//11.19/1'
-        with open(readfile + '/Pmatrix.json', 'r') as f:
-            self.pmatrix = json.loads(f.read())
-        with open(readfile + '/Qmatrix.json', 'r') as f:
-            self.qmatrix = json.loads(f.read())
+        readfile = '.'
+        # with open(readfile + '/Pmatrix.json', 'r') as f:
+        #     self.pmatrix = json.loads(f.read())
+        # with open(readfile + '/Qmatrix.json', 'r') as f:
+        #     self.qmatrix = json.loads(f.read())
+        self.pmatrix = self.load_mf_matrix(readfile + '/11_1_p.csv')
+        self.qmatrix = self.load_mf_matrix(readfile + '/11_1_q.csv')
+
+    @staticmethod
+    def load_mf_matrix(target_file):
+        with open(target_file) as f:
+            temp_matrix = {}
+            f.readline()
+            for line in f.readlines():
+                line = line.strip().split(',')
+                attr = {}
+                for i in range(5):
+                    attr[str(i)] = line[i+1]
+                temp_matrix[line[0]] = attr
+        return temp_matrix
 
     def run(self):
         for user in self.train.keys():
@@ -106,14 +123,14 @@ class Evaluation():
             tu = self.test.get(user, {})  # user corresponding movie list in the test.
             Init_rank = Recommend(user, self.train, self.W)
             rank = Init_rank[:self.N]
-            Filter_rank = self.Filter(user, Init_rank)[:self.N]
+            filter_rank = self.Filter(user, Init_rank)[:self.N]
             for item, _ in rank:
                 if item in tu:
                     self.hit += 1
                 self.recommend_items.add(item)
             self.all += len(tu)
 
-            for item, _ in Filter_rank:
+            for item, _ in filter_rank:
                 if item in tu:
                     self.hit_filter += 1
                 self.recommend_items_filter.add(item)
@@ -122,7 +139,7 @@ class Evaluation():
         user = str(user)
         user_att = sorted(self.pmatrix[user].items(), key=itemgetter(1))
         NegativeAtt = []
-        for i in range(10):
+        for i in range(5):
             negative, _ = user_att[i]
             NegativeAtt.append(negative)
         WillRm = []
