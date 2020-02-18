@@ -2,7 +2,6 @@
 import math
 import random
 import re
-import json
 from operator import itemgetter
 
 REC_NUMBER = 10
@@ -10,7 +9,7 @@ similarity_user = 50
 
 
 # 读取数据，分割为训练集和测试集：M表示 1/M 的样本为测试集
-def SplitData(filename, M, seed):
+def split_data(filename, M, seed):
     test = dict()
     train = dict()
     # 数据集以dict的方式存储，key为user id， value为user看过的movie id组成的list
@@ -170,15 +169,12 @@ class Evaluation:
 
 def main():
     filename = './ml-latest-small/ratings.csv'
-    # filename = './ml-100k/u.data'
-    test, train = SplitData(filename, 5, random.random())
+    test, train = split_data(filename, 5, random.random())
     W = UserSimilarity(train)
     result = Evaluation(train, test, W)
     result.run()
     result.Precision()
-    print('\n')
     result.Recall()
-    print('\n')
     result.Coverage()
 
 
