@@ -25,6 +25,14 @@ class Dataset:
 
         return raw_ratings
 
+    def construct_trainset(self, raw_trainset):
+
+        raw2inner_id_users = {}
+        raw2inner_id_items = {}
+
+
+
+
 
 class DatasetAutoFolds(Dataset):
     """
@@ -42,38 +50,4 @@ class DatasetAutoFolds(Dataset):
 
         else:
             raise ValueError('Must specify ratings file or dataframe.')
-
-    @classmethod
-    def data_load(cls, file_path, seed, m):
-        """
-        input: file_path: data set path
-        output: {{item: rating}, {item: rating},...{item: rating}}
-        """
-        test = dict()
-        train = dict()
-        # 数据集以dict的方式存储，key为user id， value为user看过的movie id组成的list
-        random.seed(seed)
-        with open(file_path, 'r') as f:
-            for i, line in enumerate(f):
-                if i == 0:
-                    continue
-                # user, movie, rating, timestamp = line.split(' ')
-                temp = re.split(',', line)
-                user = temp[0]
-                movie = temp[1]
-                rating = temp[2]
-                user = int(user)
-
-                # 此处int(rating)会报错；4分以下的评分忽略
-                if float(rating) < 4:
-                    continue
-                if random.randint(1, m) == 1:
-                    if user not in test:
-                        test[user] = []
-                    test[user].append(movie)
-                else:
-                    if user not in train:
-                        train[user] = []
-                    train[user].append(movie)
-        return test, train
 
