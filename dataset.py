@@ -3,6 +3,9 @@ import re
 import os
 import itertools
 
+from collections import defaultdict
+from surprise.trainset import Trainset
+
 
 class Dataset:
     """
@@ -30,8 +33,49 @@ class Dataset:
         raw2inner_id_users = {}
         raw2inner_id_items = {}
 
+        ur = defaultdict(list)
+        ir = defaultdict(list)
 
+        current_u_index = 0
+        current_i_index = 0
 
+        for urid, irid, r, timestamp in raw_trainset:
+            try:
+                uid = raw2inner_id_users[urid]
+            except KeyError:
+                uid = current_u_index
+                raw2inner_id_users[urid] = uid
+                current_u_index += 1
+
+            try:
+                iid = raw2inner_id_items[irid]
+            except KeyError:
+                iid = current_i_index
+                raw2inner_id_items[irid] = iid
+                current_i_index += 1
+
+            ur[uid].append((iid, r))
+            ir[iid].append((uid, r))
+
+        n_users = len(ur)   # number of users
+        n_items = len(ir)   # number of items
+        n_ratings = len(raw_trainset)
+
+        trainset = Trainset(ur,
+                            ir,
+                            n_users,
+                            n_items,
+                            n_ratings,
+                            self.reader.rating_scale,
+                            raw2inner_id_users,
+                            raw2inner_id_items)
+
+        return trainset
+
+    def construct_testset(self, raw_testset):
+
+        return [(ruid, riid, r_ui_trans)
+                for (ruid, riid, r_ui_trans, _) in raw_testset]
 
 
 class DatasetAutoFolds(Dataset):
