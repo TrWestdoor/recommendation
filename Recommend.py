@@ -9,10 +9,9 @@ def surprise_code():
     data = Dataset.load_from_file('./ml-latest-small/ratings.csv', reader)
     # print(len(data.raw_ratings))
 
-    measure = 'mse'
     algo = KNNBasic()
-    perf = cross_validate(algo, data, measures=['RMSE', 'MAE'], cv=3)
-    print(perf)
+    perf = cross_validate(algo, data, measures=['RMSE', 'MAE'], cv=2, verbose=True)
+    # print(perf)
 
 
 if __name__ == '__main__':
