@@ -3,3 +3,7 @@ ml-10M100K
 testruth.txt
 Result
 .idea/
+.DS_Store
+__pycache__/
+ml-latest-small/.DS_Store
+
