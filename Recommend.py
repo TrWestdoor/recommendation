@@ -1,7 +1,9 @@
 from dataset import Dataset
 from reader import Reader
+
 from surprise.prediction_algorithms import KNNBasic
-from surprise.model_selection import cross_validate
+from model_selection.validation import cross_validate
+# from surprise.model_selection import cross_validate
 
 
 def surprise_code():
@@ -10,8 +12,8 @@ def surprise_code():
     # print(len(data.raw_ratings))
 
     algo = KNNBasic()
-    perf = cross_validate(algo, data, measures=['RMSE', 'MAE'], cv=2, verbose=True)
-    # print(perf)
+    perf = cross_validate(algo, data, measures=['RMSE', 'MAE'], cv=2, verbose=0)
+    print(perf)
 
 
 if __name__ == '__main__':
