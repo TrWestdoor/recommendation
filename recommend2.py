@@ -13,7 +13,7 @@ class UserBasedCF():
     # 初始化相关参数
     def __init__(self):
         # 找到与目标用户兴趣相似的20个用户，为其推荐10部电影
-        self.n_sim_user = 20
+        self.n_sim_user = 10
         self.n_rec_movie = 10
 
         # 将数据集划分为训练集和测试集
@@ -33,7 +33,7 @@ class UserBasedCF():
         trainSet_len = 0
         testSet_len = 0
         for line in self.load_file(filename):
-            user, movie, rating, timestamp = line.split(',')
+            user, movie, rating, timestamp = line.split()
             if random.random() < pivot:
                 self.trainSet.setdefault(user, {})
                 self.trainSet[user][movie] = rating
@@ -45,13 +45,13 @@ class UserBasedCF():
         print('Split trainingSet and testSet success!')
         print('TrainSet = %s' % trainSet_len)
         print('TestSet = %s' % testSet_len)
+        print("the number of users:", len(self.trainSet)+len(self.testSet))
 
 
     # 读文件，返回文件的每一行
     def load_file(self, filename):
         with open(filename, 'r') as f:
             for i, line in enumerate(f):
-                print(line)
                 if i == 0:  # 去掉文件第一行的title
                     continue
                 yield line.strip('\r\n')
@@ -138,7 +138,7 @@ class UserBasedCF():
 
 
 if __name__ == '__main__':
-    rating_file = './ml-latest-small/ratings.csv'
+    rating_file = '/Users/songshiwei/Downloads/ml-100k/experiment/ration_10'
     userCF = UserBasedCF()
     userCF.get_dataset(rating_file)
     userCF.calc_user_sim()

@@ -1,9 +1,9 @@
 from dataset import Dataset
 from reader import Reader
 
-from surprise.prediction_algorithms import KNNBasic
+# from surprise.prediction_algorithms import KNNBasic
+from preditction_algorithms.knns import KNNBasic
 from model_selection.validation import cross_validate
-# from surprise.model_selection import cross_validate
 
 
 def surprise_code():

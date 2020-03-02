@@ -22,8 +22,6 @@ def cross_validate(algo, data, measures=['rmse', 'mae'], cv=None,
      fit_times,
      test_times) = zip(*out)
 
-    # print(test_measures_dicts)
-
     test_measures = dict()
     train_measures = dict()
     ret = dict()
