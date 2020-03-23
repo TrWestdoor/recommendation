@@ -13,7 +13,8 @@ def surprise_code():
 
     algo = KNNBasic()
     perf = cross_validate(algo, data, measures=['RMSE', 'MAE'], cv=2, verbose=0)
-    print(perf)
+    for keys in perf:
+        print(keys, ": ", perf[keys])
 
 
 if __name__ == '__main__':
