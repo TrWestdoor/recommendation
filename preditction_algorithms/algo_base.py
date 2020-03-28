@@ -58,7 +58,7 @@ class AlgoBase:
             - Some additional details about the prediction that might be useful
               for later analysis.
         """
-        # print(verbose)
+
         try:
             iuid = self.trainset.to_inner_uid(uid)
         except ValueError:
@@ -94,8 +94,7 @@ class AlgoBase:
         pred = Prediction(iuid, iiid, r_ui, est, details)
 
         if verbose:
-            # print(pred)
-            pass
+            print(pred)
 
         return pred
 
@@ -111,7 +110,7 @@ class AlgoBase:
         """
         return self.trainset.global_mean
 
-    def test(self, testset, verbose=True):
+    def test(self, testset, verbose=False):
         predictions = [self.predict(uid, iid, r_ui_trans, clip=True, verbose=verbose)
                        for (uid, iid, r_ui_trans) in testset]
 
