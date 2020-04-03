@@ -4,7 +4,8 @@ import os
 import itertools
 
 from collections import defaultdict
-from surprise.trainset import Trainset
+# from surprise.trainset import Trainset
+from trainset import Trainset
 
 
 class Dataset:
