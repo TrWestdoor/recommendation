@@ -9,7 +9,6 @@ from model_selection.validation import cross_validate
 def surprise_code():
     reader = Reader(line_format="user item rating", sep=',', skip_lines=1)
     data = Dataset.load_from_file('./ml-latest-small/ratings.csv', reader)
-    # print(len(data.raw_ratings))
 
     algo = KNNBasic()
     perf = cross_validate(algo, data, measures=['RMSE', 'MAE'], cv=2, verbose=0)

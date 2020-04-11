@@ -1,7 +1,6 @@
 from .split import get_cv
 from joblib import Parallel, delayed
 
-# from surprise import accuracy
 import accuracy
 import time
 import numpy as np

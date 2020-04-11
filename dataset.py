@@ -1,5 +1,3 @@
-import random
-import re
 import os
 import itertools
 
